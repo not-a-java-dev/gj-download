@@ -4,6 +4,7 @@ use reqwest::Client;
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use clap::Parser;
 use flate2::read::GzDecoder;
+use colored::*;
 
 /// Simple Geometry Jump Level Downloader
 #[derive(Parser)]
@@ -55,15 +56,16 @@ async fn main() {
     let parsed = parse_universal(&response, ":");
     println!("[ ENDED DOWNLOADING ]");
     let level = parsed.get(&"4"); // 4th key is the level data, a big blob of base64 that was gzipped
-    match parsed.get(&"2") {
+    let mut forced_decrypt: bool = false;
+    match parsed.get(&"2") { // Level Name
         Some(x) => {
             println!("Level \"{}\" downloaded", x);
         }
-        None    => {
+        None => {
             println!("Level downloaded");
         }
     }
-    match parsed.get(&"3") {
+    match parsed.get(&"3") { // Description base64 encoded
         Some(x) => {
             print!("-> ");
             let description = URL_SAFE.decode(x.as_bytes()).unwrap();
@@ -73,14 +75,26 @@ async fn main() {
             }
             println!("{}", str_description);
         }
-        None    => {
+        None => {
             println!("-> ");
+        }
+    }
+    match parsed.get(&"13") { // Version
+        Some(x) => {
+            let x_parsed = x.to_string().parse::<i32>().unwrap();
+            if x_parsed < 19 {
+                println!("{} Level version is less than 19! Cannot decrypt level", "[ WARNING ]".yellow().bold());
+                forced_decrypt = true;
+            }
+        }
+        None => {
+            println!("e");
         }
     }
     match level {
         Some(x) => {
             let bytes = x.as_bytes();
-            if args.dont_decrypt != false {
+            if args.dont_decrypt != false || forced_decrypt {
                 println!("Not decrypting! Saving now...");
                 fs::write("level.txt", x).unwrap();
                 return;
@@ -95,7 +109,7 @@ async fn main() {
             println!("Saving now...");
             fs::write("level.txt", s).unwrap();
         }
-        None           => {
+        None => {
             panic!("Level isn't here!! What Happened? {:?}", parsed);
         }
     }
