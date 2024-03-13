@@ -88,7 +88,7 @@ async fn main() {
             }
         }
         None => {
-            println!("e");
+            println!("Level version was not found, decryption might not work");
         }
     }
     match level {
