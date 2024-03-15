@@ -102,12 +102,12 @@ async fn main() {
             println!("[ DECRYPTING ]");
             let data = URL_SAFE.decode(bytes).unwrap();
 
-            let mut d = GzDecoder::new(data.as_slice());
-            let mut s = String::new();
-            d.read_to_string(&mut s).unwrap();
+            let mut gunzipped_data = GzDecoder::new(data.as_slice());
+            let mut data_string = String::new();
+            gunzipped_data.read_to_string(&mut data_string).unwrap();
             println!("[ ENDED DECRYPTING ]");
             println!("Saving now...");
-            fs::write("level.txt", s).unwrap();
+            fs::write("level.txt", data_string).unwrap();
         }
         None => {
             panic!("Level isn't here!! What Happened? {:?}", parsed);
