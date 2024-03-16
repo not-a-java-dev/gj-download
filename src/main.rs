@@ -6,6 +6,7 @@ use clap::Parser;
 use flate2::read::GzDecoder;
 use colored::*;
 
+
 /// Simple Geometry Jump Level Downloader
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -56,6 +57,10 @@ async fn main() {
     form.insert("levelID".to_string(), args.level);
     println!("{}", "[ DOWNLOADING ]".blue().bold());
     let response = request_gj("downloadGJLevel22", form).await;
+    if response == "-1" {             
+        println!("{} Level ID does not exist or it's unlisted!", "[ ERROR ]".red().bold());
+        return;
+    }
     let parsed = parse_universal(&response, ":");
     println!("{}", "[ ENDED DOWNLOADING ]".blue().bold());
     let level = parsed.get(&"4"); // 4th key is the level data, a big blob of base64 that was gzipped
