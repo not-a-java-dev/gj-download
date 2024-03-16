@@ -16,6 +16,9 @@ struct Cli {
     /// Whether to decrypt or not [DEFAULT = TRUE]
     #[arg(short, long, default_value_t = false)]
     dont_decrypt: bool,
+    /// Pre 1.8 levels can't be decrypted, use this if you want to force it to decrypt
+    #[arg(short, long, default_value_t = false)]
+    force_decrypt: bool,
 }
 async fn request_gj(api: &str, form: HashMap<String, String>) -> String {
     let client = Client::new();
@@ -51,10 +54,10 @@ async fn main() {
     let mut form = HashMap::new();
     form.insert("secret".to_string(), "Wmfd2893gb7".to_string());
     form.insert("levelID".to_string(), args.level);
-    println!("[ DOWNLOADING ]");
+    println!("{}", "[ DOWNLOADING ]".blue().bold());
     let response = request_gj("downloadGJLevel22", form).await;
     let parsed = parse_universal(&response, ":");
-    println!("[ ENDED DOWNLOADING ]");
+    println!("{}", "[ ENDED DOWNLOADING ]".blue().bold());
     let level = parsed.get(&"4"); // 4th key is the level data, a big blob of base64 that was gzipped
     let mut forced_decrypt: bool = false;
     match parsed.get(&"2") { // Level Name
@@ -85,10 +88,14 @@ async fn main() {
             if x_parsed < 19 {
                 println!("{} Level version is less than 19! Cannot decrypt level", "[ WARNING ]".yellow().bold());
                 forced_decrypt = true;
+                if args.force_decrypt {
+                    println!("{} Force decrypt argument was passed! Attempting to decrypt level...", "[ INFO ]".green().bold());
+                    forced_decrypt = false;
+                }
             }
         }
         None => {
-            println!("Level version was not found, decryption might not work");
+            println!("{} Level version was not found, decryption might not work", "[ INFO ]".green().bold());
         }
     }
     match level {
@@ -99,13 +106,13 @@ async fn main() {
                 fs::write("level.txt", x).unwrap();
                 return;
             }
-            println!("[ DECRYPTING ]");
+            println!("{}", "[ DECRYPTING ]".green().bold());
             let data = URL_SAFE.decode(bytes).unwrap();
 
             let mut gunzipped_data = GzDecoder::new(data.as_slice());
             let mut data_string = String::new();
             gunzipped_data.read_to_string(&mut data_string).unwrap();
-            println!("[ ENDED DECRYPTING ]");
+            println!("{}", "[ ENDED DECRYPTING ]".green().bold());
             println!("Saving now...");
             fs::write("level.txt", data_string).unwrap();
         }
