@@ -75,7 +75,7 @@ async fn main() {
     }
     match parsed.get(&"3") { // Description base64 encoded
         Some(x) => {
-            print!("-> ");
+            print!("Description -> ");
             let description = URL_SAFE.decode(x.as_bytes()).unwrap();
             let mut str_description = String::new();
             for b in description {
@@ -84,7 +84,7 @@ async fn main() {
             println!("{}", str_description);
         }
         None => {
-            println!("-> ");
+            println!("Description -> <No description provided>");
         }
     }
     match parsed.get(&"13") { // Version
