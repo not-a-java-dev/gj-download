@@ -5,7 +5,7 @@ use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use clap::Parser;
 use flate2::read::GzDecoder;
 use colored::*;
-
+use inflate::inflate_bytes_zlib;
 
 /// Simple Geometry Jump Level Downloader
 #[derive(Parser)]
@@ -17,9 +17,6 @@ struct Cli {
     /// Whether to decrypt or not [DEFAULT = TRUE]
     #[arg(short, long, default_value_t = false)]
     dont_decrypt: bool,
-    /// Pre 1.8 levels can't be decrypted, use this if you want to force it to decrypt
-    #[arg(short, long, default_value_t = false)]
-    force_decrypt: bool,
 }
 async fn request_gj(api: &str, form: HashMap<String, String>) -> String {
     let client = Client::new();
@@ -64,7 +61,6 @@ async fn main() {
     let parsed = parse_universal(&response, ":");
     println!("{}", "[ ENDED DOWNLOADING ]".blue().bold());
     let level = parsed.get(&"4"); // 4th key is the level data, a big blob of base64 that was gzipped
-    let mut forced_decrypt: bool = false;
     match parsed.get(&"2") { // Level Name
         Some(x) => {
             println!("Level \"{}\" downloaded", x);
@@ -87,26 +83,26 @@ async fn main() {
             println!("Description -> <No description provided>");
         }
     }
-    match parsed.get(&"13") { // Version
-        Some(x) => {
-            let x_parsed = x.to_string().parse::<i32>().unwrap();
-            if x_parsed < 19 {
-                println!("{} Level version is less than 19! Cannot decrypt level", "[ WARNING ]".yellow().bold());
-                forced_decrypt = true;
-                if args.force_decrypt {
-                    println!("{} Force decrypt argument was passed! Attempting to decrypt level...", "[ INFO ]".green().bold());
-                    forced_decrypt = false;
-                }
-            }
-        }
-        None => {
-            println!("{} Level version was not found, decryption might not work", "[ INFO ]".green().bold());
-        }
-    }
+    // match parsed.get(&"13") { // Version (this was used before pre1.9 levels could be decrypted, now they can be)
+    //     Some(x) => {
+    //         let x_parsed = x.to_string().parse::<i32>().unwrap();
+    //         if x_parsed < 19 {
+    //             println!("{} Level version is less than 19! Cannot decrypt level", "[ WARNING ]".yellow().bold());
+    //             forced_decrypt = true;
+    //             if args.force_decrypt {
+    //                 println!("{} Force decrypt argument was passed! Attempting to decrypt level...", "[ INFO ]".green().bold());
+    //                 forced_decrypt = false;
+    //             }
+    //         }
+    //     }
+    //     None => {
+    //         println!("{} Level version was not found, decryption might not work", "[ INFO ]".green().bold());
+    //     }
+    // }
     match level {
         Some(x) => {
             let bytes = x.as_bytes();
-            if args.dont_decrypt != false || forced_decrypt {
+            if args.dont_decrypt != false {
                 println!("Not decrypting! Saving now...");
                 fs::write("level.txt", x).unwrap();
                 return;
@@ -116,9 +112,20 @@ async fn main() {
 
             let mut gunzipped_data = GzDecoder::new(data.as_slice());
             let mut data_string = String::new();
-            gunzipped_data.read_to_string(&mut data_string).unwrap();
+            let dat = gunzipped_data.read_to_string(&mut data_string);
+            let mut jaiohfjh = false; // i totally did not smack my keyboard
+            if dat.is_ok() {
+                dat.unwrap();
+            } else { // probably a pre 1.9 level or some corrupt thing idk im dumb
+                jaiohfjh = true;
+                let decoded = inflate_bytes_zlib(data.as_slice());
+                fs::write("level.txt", decoded.unwrap()).unwrap(); // this looks like bird poop
+            }
             println!("{}", "[ ENDED DECRYPTING ]".green().bold());
             println!("Saving now...");
+            if jaiohfjh {
+                return;
+            }
             fs::write("level.txt", data_string).unwrap();
         }
         None => {
