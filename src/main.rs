@@ -11,7 +11,8 @@ use inflate::inflate_bytes_zlib;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// The ID of the level to download
+    /// The ID of the level to download, to download daily levels use "daily" and "weekly" for
+    /// weekly ones
     #[arg(short, long)]
     level: String,
     /// Whether to decrypt or not [DEFAULT = TRUE]
@@ -50,8 +51,14 @@ fn parse_universal<'a>(string: &'a str, sep: &'a str) -> HashMap<&'a str, &'a st
 async fn main() {
     let args = Cli::parse();
     let mut form = HashMap::new();
+    let mut lvl_id = args.level;
+    if lvl_id.clone() == "daily".to_string() {
+        lvl_id = "-1".to_string();
+    } else if lvl_id.clone() == "weekly".to_string() {
+        lvl_id = "-2".to_string();
+    }
     form.insert("secret".to_string(), "Wmfd2893gb7".to_string());
-    form.insert("levelID".to_string(), args.level);
+    form.insert("levelID".to_string(), lvl_id);
     println!("{}", "[ DOWNLOADING ]".blue().bold());
     let response = request_gj("downloadGJLevel22", form).await;
     if response == "-1" {             
