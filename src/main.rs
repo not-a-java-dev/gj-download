@@ -90,6 +90,39 @@ async fn main() {
             println!("Description -> <No description provided>");
         }
     }
+    match parsed.get(&"5") {
+        Some(x) => {
+            print!("Version: {} | ", x);
+        }
+        None => {
+            print!("Version: UNKNOWN | ");
+        }
+    }
+    match parsed.get(&"10") {
+        Some(x) => {
+            print!("Downloads: {} | ", x);
+        }
+        None => {
+            print!("Downloads: UNKNOWN | ");
+        }
+    }
+    match parsed.get(&"28") {
+        Some(x) => {
+            print!("Uploaded {} ago | ", x);
+        }
+        None => {
+            print!("Uploaded UNKNOWN ago | ");
+        }
+    }
+    match parsed.get(&"29") {
+        Some(x) => {
+            print!("Last Updated {} ago ", x);
+        }
+        None => {
+            print!("Last Updated UNKNOWN ago ");
+        }
+    }
+    println!();
     // match parsed.get(&"13") { // Version (this was used before pre1.9 levels could be decrypted, now they can be)
     //     Some(x) => {
     //         let x_parsed = x.to_string().parse::<i32>().unwrap();
