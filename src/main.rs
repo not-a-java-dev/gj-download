@@ -153,17 +153,17 @@ async fn main() {
             let mut gunzipped_data = GzDecoder::new(data.as_slice());
             let mut data_string = String::new();
             let dat = gunzipped_data.read_to_string(&mut data_string);
-            let mut jaiohfjh = false; // i totally did not smack my keyboard
+            let mut pre = false;
             if dat.is_ok() {
                 dat.unwrap();
             } else { // probably a pre 1.9 level or some corrupt thing idk im dumb
-                jaiohfjh = true;
+                pre = true;
                 let decoded = inflate_bytes_zlib(data.as_slice());
                 fs::write("level.txt", decoded.unwrap()).unwrap(); // this looks like bird poop
             }
             println!("{}", "[ ENDED DECRYPTING ]".green().bold());
             println!("Saving now...");
-            if jaiohfjh {
+            if pre {
                 return;
             }
             fs::write("level.txt", data_string).unwrap();
