@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 use std::io::prelude::*;
-use reqwest::Client;
+use reqwest::blocking::Client;
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use clap::Parser;
 use flate2::read::GzDecoder;
@@ -19,16 +19,14 @@ struct Cli {
     #[arg(short, long, default_value_t = false)]
     dont_decrypt: bool,
 }
-async fn request_gj(api: &str, form: HashMap<String, String>) -> String {
+fn request_gj(api: &str, form: HashMap<String, String>) -> String {
     let client = Client::new();
     let res = client.post("http://www.boomlings.com/database/".to_owned() + api + ".php")
         .header("User-Agent", "")
         .form(&form)
         .send()
-        .await
         .expect("idk")
         .text()
-        .await
         .expect("idk but something about payload");
     res
 }
@@ -45,10 +43,7 @@ fn parse_universal<'a>(string: &'a str, sep: &'a str) -> HashMap<&'a str, &'a st
     obj_new
 }
 
-
-
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Cli::parse();
     let mut form = HashMap::new();
     let mut lvl_id = args.level;
@@ -60,7 +55,7 @@ async fn main() {
     form.insert("secret".to_string(), "Wmfd2893gb7".to_string());
     form.insert("levelID".to_string(), lvl_id);
     println!("{}", "[ DOWNLOADING ]".blue().bold());
-    let response = request_gj("downloadGJLevel22", form).await;
+    let response = request_gj("downloadGJLevel22", form);
     if response == "-1" {             
         println!("{} Level ID does not exist or it's unlisted!", "[ ERROR ]".red().bold());
         return;
