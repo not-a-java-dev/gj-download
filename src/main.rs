@@ -1,12 +1,18 @@
+use std::env;
 use std::{collections::HashMap, fs};
 use std::io::prelude::*;
+use std::path::PathBuf;
 use reqwest::blocking::Client;
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use clap::Parser;
 use flate2::read::GzDecoder;
 use colored::*;
 use inflate::inflate_bytes_zlib;
-
+fn default_level_save_path() -> PathBuf {
+    let mut path = env::current_dir().unwrap(); // Rahhhhhhhhh
+    path.push("level.txt");
+    path
+}
 /// Simple Geometry Jump Level Downloader
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -18,6 +24,9 @@ struct Cli {
     /// Whether to decrypt or not [DEFAULT = TRUE]
     #[arg(short, long, default_value_t = false)]
     dont_decrypt: bool,
+    /// Where the file should be written
+    #[arg(short, long, default_value=default_level_save_path().into_os_string())]
+    output: PathBuf
 }
 fn request_gj(api: &str, form: HashMap<String, String>) -> String {
     let client = Client::new();
@@ -45,6 +54,14 @@ fn parse_universal<'a>(string: &'a str, sep: &'a str) -> HashMap<&'a str, &'a st
 
 fn main() {
     let args = Cli::parse();
+    if args.output.is_dir() {
+        println!("{} Output is a directory!", "[ ERROR ]".red().bold());
+        return;
+    }
+    if args.output.exists() {
+        println!("{} Output file already exists!", "[ ERROR ]".red().bold());
+        return;
+    }
     let mut form = HashMap::new();
     let mut lvl_id = args.level;
     if lvl_id.clone() == "daily".to_string() {
@@ -139,7 +156,7 @@ fn main() {
             let bytes = x.as_bytes();
             if args.dont_decrypt != false {
                 println!("Not decrypting! Saving now...");
-                fs::write("level.txt", x).unwrap();
+                fs::write(args.output.clone(), x).unwrap();
                 return;
             }
             println!("{}", "[ DECRYPTING ]".green().bold());
@@ -154,14 +171,14 @@ fn main() {
             } else { // probably a pre 1.9 level or some corrupt thing idk im dumb
                 pre = true;
                 let decoded = inflate_bytes_zlib(data.as_slice());
-                fs::write("level.txt", decoded.unwrap()).unwrap(); // this looks like bird poop
+                fs::write(args.output.clone(), decoded.unwrap()).unwrap(); // this looks like bird poop
             }
             println!("{}", "[ ENDED DECRYPTING ]".green().bold());
             println!("Saving now...");
             if pre {
                 return;
             }
-            fs::write("level.txt", data_string).unwrap();
+            fs::write(args.output, data_string).unwrap();
         }
         None => {
             panic!("Level isn't here!! What Happened? {:?}", parsed);
